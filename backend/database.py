@@ -26,6 +26,9 @@ class User(Base):
         return '<User %s(%s), debt=%s, credit=%s, profile_photo=%s>' % (
             self.name, self.uid, self.debt, self.credit, self.profile_photo)
 
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Transaction(Base):
     __tablename__ = 'transactions'
@@ -41,6 +44,9 @@ class Transaction(Base):
         return '<Transaction %s: %s must give %s %s for %s at %s>' % (
             self.tid, self.debtor_id, self.creditor_id,
             self.price, self.name, self.time)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class DeadTransaction(Base):
@@ -58,6 +64,9 @@ class DeadTransaction(Base):
             self.tid, self.debtor_id, self.creditor_id,
             self.price, self.name, self.time)
 
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 def get_engine(db_path):
     return db.create_engine('sqlite:///%s' % db_path)
@@ -65,6 +74,7 @@ def get_engine(db_path):
 
 def db_connect(db_path):
     Session = sessionmaker(bind=get_engine(db_path))
+    logger.info('Connected to database')
     return Session()
 
 
