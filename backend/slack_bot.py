@@ -1,6 +1,7 @@
 # TODO: https://blog.wky.kr/16
 import slack
 
+from logzero import logger
 from config import TOKEN
 
 
@@ -8,6 +9,9 @@ from config import TOKEN
 def msg_handler(**payload):
     data = payload['data']
     web_client = payload['web_client']
+
+    logger.debug('%s in %s: %s', data['user'],
+                 data['channel'], data.get('text'))
 
     if 'Hello' in data.get('text', []):
         channel_id = data['channel']
@@ -20,6 +24,7 @@ def msg_handler(**payload):
 
 def __main():
     rtm_client = slack.RTMClient(token=TOKEN)
+    logger.info('Starting Slack RTM Client')
     rtm_client.start()
 
 
