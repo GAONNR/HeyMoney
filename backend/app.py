@@ -24,6 +24,11 @@ api.add_resource(GetTransaction, '/api/transaction')
 api.add_resource(GetStats, '/api/stats')
 
 
+@app.route('/')
+def index():
+    return render_template('dist/index.html')
+
+
 def __main():
     app.run('0.0.0.0', debug=args.debug, port=args.port, threaded=True)
 
