@@ -6,7 +6,7 @@ from database import (User, Transaction, DeadTransaction)
 session = database.db_connect('heymoney.db')
 
 
-class Stats(Resource):
+class Status(Resource):
     def get(self):
         return {'status': True}
 
@@ -31,7 +31,65 @@ class GetUser(Resource):
 
 
 class GetTransaction(Resource):
-    NotImplemented
+    def get(self):
+        try:
+            req_parser = reqparse.RequestParser()
+            req_parser.add_argument('tid', type=str)
+            req_parser.add_argument('debtor', type=str)
+            req_parser.add_argument('creditor', type=str)
+            req_args = req_parser.parse_args()
+
+            tid = req_args['tid']
+            debtor = req_args['debtor']
+            creditor = req_args['creditor']
+
+            if tid:
+                trade = session.query(Transaction).filter_by(tid=tid).first()
+                return trade.as_dict()
+            elif debtor:
+                trades = session.query(Transaction).filter_by(debtor_id=debtor)
+                return [trade.as_dict() for trade in trades]
+            elif creditor:
+                trades = session.query(Transaction).filter_by(
+                    creditor_id=creditor)
+                return [trade.as_dict() for trade in trades]
+            else:
+                all_trades = session.query(Transaction).all()
+                return [trade.as_dict() for trade in all_trades]
+        except Exception as e:
+            return {'error': str(e)}
+
+
+class GetDeadTransaction(Resource):
+    def get(self):
+        try:
+            req_parser = reqparse.RequestParser()
+            req_parser.add_argument('tid', type=str)
+            req_parser.add_argument('debtor', type=str)
+            req_parser.add_argument('creditor', type=str)
+            req_args = req_parser.parse_args()
+
+            tid = req_args['tid']
+            debtor = req_args['debtor']
+            creditor = req_args['creditor']
+
+            if tid:
+                trade = session.query(
+                    DeadTransaction).filter_by(tid=tid).first()
+                return trade.as_dict()
+            elif debtor:
+                trades = session.query(
+                    DeadTransaction).filter_by(debtor_id=debtor)
+                return [trade.as_dict() for trade in trades]
+            elif creditor:
+                trades = session.query(DeadTransaction).filter_by(
+                    creditor_id=creditor)
+                return [trade.as_dict() for trade in trades]
+            else:
+                all_trades = session.query(DeadTransaction).all()
+                return [trade.as_dict() for trade in all_trades]
+        except Exception as e:
+            return {'error': str(e)}
 
 
 class GetStats(Resource):

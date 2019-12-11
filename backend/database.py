@@ -19,8 +19,8 @@ class User(Base):
     uid = Column(String, primary_key=True)
     name = Column(String)
     profile_photo = Column(String)
-    debt = Column(Integer)
-    credit = Column(Integer)
+    debt = Column(Integer, default=0)
+    credit = Column(Integer, default=0)
 
     def __repr__(self):
         return '<User %s(%s), debt=%s, credit=%s, profile_photo=%s>' % (
