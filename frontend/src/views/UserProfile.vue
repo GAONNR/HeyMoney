@@ -22,33 +22,35 @@
         />
       </v-flex>
       <v-flex md12 lg12>
-        <material-card color="pink" title="Debts" text="돈을 제때제때 갚읍시다.">
-          <v-data-table :headers="headers" :items="items" hide-actions>
+        <material-card color="pink" title="Debts" text="돈을 제때제때 갚읍시다">
+          <v-data-table :headers="headers" :items="debts" hide-actions>
             <template slot="headerCell" slot-scope="{ header }">
               <span class="font-weight-light text-warning text--darken-3" v-text="header.text" />
             </template>
             <template slot="items" slot-scope="{ index, item }">
-              <td>{{ index + 1 }}</td>
+              <td class="text-xs-right">{{ item.tid }}</td>
               <td>{{ item.name }}</td>
-              <td class="text-xs-right">{{ item.salary }}</td>
-              <td class="text-xs-right">{{ item.country }}</td>
-              <td class="text-xs-right">{{ item.city }}</td>
+              <td>{{ users[item.creditor_id].name }}</td>
+              <td>{{ users[item.debtor_id].name }}</td>
+              <td class="text-xs-right">{{ item.price }}</td>
+              <td class="text-xs-right">{{ new Date(item.timestamp * 1000).toLocaleString() }}</td>
             </template>
           </v-data-table>
         </material-card>
       </v-flex>
       <v-flex md12 lg12>
-        <material-card color="blue" title="Credits" text="돈을 제때제때 갚읍시다.">
-          <v-data-table :headers="headers" :items="items" hide-actions>
+        <material-card color="blue" title="Credits" text="돈을 제때제때 갚읍시다">
+          <v-data-table :headers="headers" :items="credits" hide-actions>
             <template slot="headerCell" slot-scope="{ header }">
               <span class="font-weight-light text-warning text--darken-3" v-text="header.text" />
             </template>
             <template slot="items" slot-scope="{ index, item }">
-              <td>{{ index + 1 }}</td>
+              <td class="text-xs-right">{{ item.tid }}</td>
               <td>{{ item.name }}</td>
-              <td class="text-xs-right">{{ item.salary }}</td>
-              <td class="text-xs-right">{{ item.country }}</td>
-              <td class="text-xs-right">{{ item.city }}</td>
+              <td>{{ users[item.creditor_id].name }}</td>
+              <td>{{ users[item.debtor_id].name }}</td>
+              <td class="text-xs-right">{{ item.price }}</td>
+              <td class="text-xs-right">{{ new Date(item.timestamp * 1000).toLocaleString() }}</td>
             </template>
           </v-data-table>
         </material-card>
@@ -62,81 +64,54 @@ export default {
   data() {
     return {
       username: undefined,
+      users: undefined,
       debt: 0,
       credit: 0,
       headers: [
         {
           sortable: false,
-          text: "#",
-          value: "tid"
+          text: '#',
+          value: 'tid',
+          align: 'right'
         },
         {
           sortable: false,
-          text: "Name",
-          value: "name"
+          text: 'Name',
+          value: 'name'
         },
         {
           sortable: false,
-          text: "Salary",
-          value: "salary",
-          align: "right"
+          text: 'Creditor ID',
+          value: 'creditor_id'
         },
         {
           sortable: false,
-          text: "Country",
-          value: "country",
-          align: "right"
+          text: 'Debtor ID',
+          value: 'debtor_id'
         },
         {
           sortable: false,
-          text: "City",
-          value: "city",
-          align: "right"
+          text: 'Price',
+          value: 'price',
+          align: 'right'
+        },
+        {
+          sortable: true,
+          text: 'Timestamp',
+          value: 'timestamp',
+          align: 'right'
         }
       ],
-      items: [
-        {
-          name: "Dakota Rice",
-          country: "Niger",
-          city: "Oud-Tunrhout",
-          salary: "$35,738"
-        },
-        {
-          name: "Minerva Hooper",
-          country: "Curaçao",
-          city: "Sinaai-Waas",
-          salary: "$23,738"
-        },
-        {
-          name: "Sage Rodriguez",
-          country: "Netherlands",
-          city: "Overland Park",
-          salary: "$56,142"
-        },
-        {
-          name: "Philip Chanley",
-          country: "Korea, South",
-          city: "Gloucester",
-          salary: "$38,735"
-        },
-        {
-          name: "Doris Greene",
-          country: "Malawi",
-          city: "Feldkirchen in Kārnten",
-          salary: "$63,542"
-        }
-      ],
-      tabs: 0,
-      list: {
-        0: false,
-        1: false,
-        2: false
-      }
+      credits: [],
+      debts: []
     };
   },
   methods: {
-    complete(index) {
-      this.list[index] = !this.list[index];
+    arrayToObject(array) {
+      return array.reduce((obj, item) => {
+        obj[item.uid] = item;
+        return obj;
+      });
     },
     getUserInfo() {
       this.$http
@@ -149,11 +124,31 @@ export default {
         .catch(err => {
           console.log(err);
         });
+      this.$http.get('/api/user').then(res => {
+        this.users = this.arrayToObject(res.data);
+      });
     },
     getCreditTransactions() {
       this.$http
         .get(`/api/transaction?creditor=${this.$route.params.uid}`)
-        .then(res => {});
+        .then(res => {
+          this.credits = res.data;
+          console.log(res.data);
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    getDebtTransactions() {
+      this.$http
+        .get(`/api/transaction?debtor=${this.$route.params.uid}`)
+        .then(res => {
+          this.debts = res.data;
+          console.log(res.data);
+        })
+        .catch(err => {
+          console.log(err);
+        });
     }
   },
   mounted() {

@@ -11,12 +11,12 @@
 
 <script>
 export default {
-  metaInfo () {
+  metaInfo() {
     return {
-      title: 'Vuetify Material Dashboard by CreativeTim'
-    }
+      title: 'HeyMoney'
+    };
   }
-}
+};
 </script>
 
 <style>
