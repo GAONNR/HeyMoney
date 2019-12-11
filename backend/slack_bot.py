@@ -1,18 +1,20 @@
+import re
 import slack
 import database
 
+from subprocess import run, PIPE
 from datetime import datetime
 from logzero import logger
 from config import TOKEN
 from database import (User, Transaction, DeadTransaction)
 
-Session = database.db_connect('heymoney.db')
+SESSION = database.db_connect('heymoney.db')
 
 
 def update_user_info(web_client):
     users = web_client.users_list()['members']
 
-    session = Session()
+    session = SESSION()
 
     for user in users:
         db_user = session.query(User).filter_by(uid=user['id']).first()
@@ -28,7 +30,7 @@ def update_user_info(web_client):
 
 
 def add_new_transaction(c_uid, d_uid, name, price, ts):
-    session = Session()
+    session = SESSION()
 
     creditor = session.query(User).filter_by(uid=c_uid).first()
     debtor = session.query(User).filter_by(uid=d_uid).first()
@@ -47,7 +49,7 @@ def add_new_transaction(c_uid, d_uid, name, price, ts):
 
 
 def kill_transaction(c_uid, d_uid, price):
-    session = Session()
+    session = SESSION()
 
     creditor = session.query(User).filter_by(uid=c_uid).first()
     debtor = session.query(User).filter_by(uid=d_uid).first()
@@ -97,6 +99,37 @@ def kill_transaction(c_uid, d_uid, price):
     session.commit()
 
 
+def tokenize_text(text):
+    return re.sub(r'\s+', ' ',
+                  re.sub(r'[,|.|@|<|>|!|?|-|+|\"|\']', '', text)).strip().split(' ')
+
+
+def queryfy_tokens(tokens):
+    return '[%s]' % ', '.join(tokens)
+
+
+def extractor(out):
+    res = re.sub(r'\s+', '', out).strip().split(',')
+    if res[0] == 'false.':
+        return None
+    else:
+        return {x.split('=')[0]: x.split('=')[1] for x in res}
+
+
+def test_new_transaction(tokens):
+    p = run(['swipl', 'parse_new_trans.pl'], stdout=PIPE,
+            input='s(User, Price, What, %s, []).\n\n' % queryfy_tokens(tokens),
+            encoding='ascii')
+    return extractor(p.stdout)
+
+
+def test_kill_transaction(tokens):
+    p = run(['swipl', 'parse_kill_trans.pl'], stdout=PIPE,
+            input='s(User, Price, %s, []).\n\n' % queryfy_tokens(tokens),
+            encoding='ascii')
+    return extractor(p.stdout)
+
+
 @slack.RTMClient.run_on(event='message')
 def msg_handler(**payload):
     data = payload['data']
@@ -127,6 +160,23 @@ def msg_handler(**payload):
         kill_transaction('U6HB7CTRT', 'U6MLYFJG3', 3000)
         web_client.chat_postMessage(channel=data['channel'],
                                     text='http://lab.g40n.xyz:12345/api/transaction?creditor=U6HB7CTRT')
+
+    tokenized_text = tokenize_text(data.get('text').lower())
+    logger.debug(tokenized_text)
+
+    parsed_new_trans = test_new_transaction(tokenized_text)
+    if parsed_new_trans:
+        add_new_transaction(data['user'], parsed_new_trans['User'].upper(),
+                            parsed_new_trans['What'], int(parsed_new_trans['Price']), int(float(data['ts'])))
+        web_client.chat_postMessage(channel=data['channel'],
+                                    text='http://lab.g40n.xyz:8080/user-profile/%s' % data['user'])
+
+    parsed_kill_trans = test_kill_transaction(tokenized_text)
+    if parsed_kill_trans:
+        kill_transaction(parsed_kill_trans['User'].upper(), data['user'],
+                         int(parsed_kill_trans['Price']))
+        web_client.chat_postMessage(channel=data['channel'],
+                                    text='http://lab.g40n.xyz:8080/user-profile/%s' % data['user'])
 
 
 def __main():
