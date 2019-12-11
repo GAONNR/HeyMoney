@@ -38,7 +38,7 @@ class Transaction(Base):
     creditor_id = Column(String, ForeignKey('users.uid'))
     debtor_id = Column(String, ForeignKey('users.uid'))
     price = Column(Integer)
-    time = Column(String)
+    timestamp = Column(Integer)
 
     def __repr__(self):
         return '<Transaction %s: %s must give %s %s for %s at %s>' % (
@@ -57,7 +57,7 @@ class DeadTransaction(Base):
     creditor_id = Column(String, ForeignKey('users.uid'))
     debtor_id = Column(String, ForeignKey('users.uid'))
     price = Column(Integer)
-    time = Column(String)
+    timestamp = Column(Integer)
 
     def __repr__(self):
         return '<DeadTransaction %s: %s must give %s %s for %s at %s>' % (
@@ -75,7 +75,7 @@ def get_engine(db_path):
 def db_connect(db_path):
     Session = sessionmaker(bind=get_engine(db_path))
     logger.info('Connected to database')
-    return Session()
+    return Session
 
 
 def __main():

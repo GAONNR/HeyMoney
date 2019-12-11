@@ -3,7 +3,7 @@ import database
 from flask_restful import (Resource, reqparse)
 from database import (User, Transaction, DeadTransaction)
 
-session = database.db_connect('heymoney.db')
+Session = database.db_connect('heymoney.db')
 
 
 class Status(Resource):
@@ -19,6 +19,8 @@ class GetUser(Resource):
             req_args = req_parser.parse_args()
 
             uid = req_args['uid']
+
+            session = Session()
 
             if uid is None:
                 all_users = session.query(User).all()
@@ -42,6 +44,8 @@ class GetTransaction(Resource):
             tid = req_args['tid']
             debtor = req_args['debtor']
             creditor = req_args['creditor']
+
+            session = Session()
 
             if tid:
                 trade = session.query(Transaction).filter_by(tid=tid).first()
@@ -72,6 +76,8 @@ class GetDeadTransaction(Resource):
             tid = req_args['tid']
             debtor = req_args['debtor']
             creditor = req_args['creditor']
+
+            session = Session()
 
             if tid:
                 trade = session.query(
